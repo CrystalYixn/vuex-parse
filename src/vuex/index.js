@@ -8,32 +8,39 @@ class Store {
       mutations,
       actions,
     } = options
-
+    this.mutations = mutations
+    this.actions = actions
     this.getters = {}
+    const computed = {}
+
+    Object.keys(getters).forEach(k => {
+      // 先做一层劫持代理进行闭包缓存入参, 再让 vue 进行计算缓存
+      computed[k] = () => {
+        return getters[k](this.state)
+      }
+      Object.defineProperty(this.getters, k, {
+        get: () => {
+          return this._vm[k]
+        }
+      })
+    })
+
     this._vm = new Vue({
       data: {
         $$state: state
       },
-      computed: getters,
+      computed,
     })
 
-    Object.keys(getters).forEach(k => {
-      Object.defineProperty(this.getters, k, {
-        get() {
-          // return this._vm[k](this.state)
-          return getters[k](state)
-        }
-      })
-    })
   }
   get state() {
     return this._vm._data.$$state
   }
-  commit = () => {
-
+  commit = (type, payload) => {
+    this.mutations[type](this.state, payload)
   }
   dispatch(type, payload) {
-
+    this.actions[type](this, payload)
   }
 }
 

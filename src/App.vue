@@ -4,6 +4,8 @@
     <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
     标准年龄{{ $store.state.age }}
     增加后年龄{{ $store.getters.plusAge }}
+    增加后年龄{{ $store.getters.plusAge }}
+    增加后年龄{{ $store.getters.plusAge }}
     <button @click="$store.commit('add', 1)">mutation</button>
     <button @click="$store.dispatch('add', 1)">action</button>
     <button @click="$store.state.age++">强制修改</button>

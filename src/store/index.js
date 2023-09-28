@@ -10,6 +10,7 @@ export default new Vuex.Store({
   },
   getters: {
     plusAge(state) {
+      console.count('计算属性执行次数')
       return state.age + 100
     }
   },
