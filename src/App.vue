@@ -2,7 +2,7 @@
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png">
     <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
-    标准年龄{{ $store.state.age }}
+    标准年龄{{ age }}
     增加后年龄{{ $store.getters.plusAge }}
     增加后年龄{{ $store.getters.plusAge }}
     增加后年龄{{ $store.getters.plusAge }}
@@ -25,6 +25,27 @@
 <script>
 import HelloWorld from './components/HelloWorld.vue'
 
+function mapState(stateKeyList) {
+  let obj = {}
+  stateKeyList.forEach(key => {
+    // 注意 function 声明使得 this 指向 Vue 实例
+    obj[key] = function() {
+      return this.$store.state[key]
+    }
+  })
+  return obj
+}
+
+function mapAction(actionKeyList) {
+  let obj = {}
+  actionKeyList.forEach(key => {
+    obj[key] = function(payload) {
+      return this.$store.dispatch(key, payload)
+    }
+  })
+  return obj
+}
+
 export default {
   name: 'App',
   components: {
@@ -33,12 +54,16 @@ export default {
   mounted() {
     console.log(` ================== this.$store ================= `, this.$store)
   },
+  computed: {
+    ...mapState(['age']),
+  },
   methods: {
     actionMethod() {
-      this.$store.dispatch('add', 1).then(() => {
+      this.add(1).then(() => {
         console.log(` ================== 完成 ================= `, )
       })
-    }
+    },
+    ...mapAction(['add']),
   }
 }
 </script>
