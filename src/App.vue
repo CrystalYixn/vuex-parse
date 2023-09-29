@@ -9,6 +9,10 @@
     <button @click="$store.commit('add', 1)">mutation</button>
     <button @click="$store.dispatch('add', 1)">action</button>
     <button @click="$store.state.age++">强制修改</button>
+
+    <br/><br/>
+    学校年龄{{ $store.state.school.age }}
+    学校增加后年龄{{ $store.getters['school/plusAge'] }}
   </div>
 </template>
 
