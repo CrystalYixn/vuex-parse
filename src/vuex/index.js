@@ -4,13 +4,15 @@ function forEachObj(obj, cb) {
   Object.keys(obj).forEach(k => cb(k, obj[k]))
 }
 
+/** 挂载属性到 store 对象上 */
 function installModule(store, rootState, path, rootModule) {
   if (path.length > 0) {
-    // 安装模块到根 state 上
+    // 安装模块 state 到根 state 上
     const parent = path.slice(0, -1).reduce((start, current) => {
       return start[current]
     }, rootState)
-    parent[path[path.length - 1]] = rootModule.state
+    // 必须使用 Vue.set 来更新属性, 否则不会重新收集依赖
+    Vue.set(parent, path[path.length - 1], rootModule.state)
   }
 
   const namespaced = store._modules.getNamespace(path)
@@ -36,10 +38,12 @@ function installModule(store, rootState, path, rootModule) {
   })
 }
 
+/** store 响应式化 */
 function resetStoreVM(store, state) {
   store.getters = {}
   const computed = {}
   const wrappedGetters = store._wrappedGetters
+  const oldVm = store._vm
 
   forEachObj(wrappedGetters, (k, v) => {
     computed[k] = v
@@ -56,6 +60,11 @@ function resetStoreVM(store, state) {
     },
     computed,
   })
+
+  // QA 为什么旧实例没有被自动销毁? 有谁还在指向旧实例吗
+  if (oldVm) {
+    Vue.nextTick(() => oldVm.$destroy)
+  }
 }
 
 class Module {
@@ -100,8 +109,10 @@ class ModuleCollection {
     this.register([], options)
   }
 
+  /** 更新内部对象的树结构 */
   register(path, rootModule) {
     let newModule = new Module(rootModule)
+    rootModule.newModule = newModule
     if (this.root === null) {
       this.root = newModule
     } else {
@@ -155,6 +166,13 @@ class Store {
 
   dispatch = (type, payload) => {
     this._actions[type].forEach(fn => fn.call(this, payload))
+  }
+
+  registerModule(path, module) {
+    this._modules.register(path, module)
+    installModule(this, this.state, path, module.newModule)
+    // 注册新的计算属性
+    resetStoreVM(this, this.state)
   }
 }
 

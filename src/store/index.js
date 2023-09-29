@@ -4,7 +4,7 @@ import Vuex from '@/vuex'
 
 Vue.use(Vuex)
 
-export default new Vuex.Store({
+const store = new Vuex.Store({
   state: {
     age: 0,
     // 重复定义与模块路径相同的 state 时会被模块的值覆盖
@@ -59,7 +59,26 @@ export default new Vuex.Store({
       },
     },
     to: {
-      
+
     }
   }
 })
+
+store.registerModule(['school', 'dynamic'], {
+  namespaced: true,
+  state: {
+    age: 999900,
+  },
+  mutations: {
+    add(state) {
+      return state.age += 10
+    }
+  },
+  getters: {
+    plusAge(state) {
+      return state.age + 10000000
+    }
+  }
+})
+
+export default store
