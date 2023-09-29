@@ -1,10 +1,37 @@
 import Vue from 'vue'
-// import Vuex from 'vuex'
-import Vuex from '@/vuex'
+import Vuex from 'vuex'
+// import logger from 'vuex/dist/logger'
+// import Vuex from '@/vuex'
 
 Vue.use(Vuex)
 
+const logger = () => (store) => {
+  let prevState = JSON.parse(JSON.stringify(store.state))
+  store.subscribe((mutationType, rootState) => {
+    const nextState = JSON.parse(JSON.stringify(rootState))
+    console.log(` ================== logger ================= `, mutationType)
+    console.table(prevState)
+    console.table(nextState)
+    prevState = nextState
+  })
+}
+
+// 持久化插件
+const persists = (store) => {
+  const state = localStorage.getItem('VUEX')
+  if (state) {
+    store.replaceState(JSON.parse(state))
+  }
+  store.subscribe((mutationType, rootState) => {
+    localStorage.setItem('VUEX', JSON.stringify(rootState))
+  })
+}
+
 const store = new Vuex.Store({
+  plugins: [
+    logger(),
+    persists,
+  ],
   state: {
     age: 0,
     // 重复定义与模块路径相同的 state 时会被模块的值覆盖
