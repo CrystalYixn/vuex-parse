@@ -16,8 +16,10 @@ function installModule(store, rootState, path, rootModule) {
     const parent = path.slice(0, -1).reduce((start, current) => {
       return start[current]
     }, rootState)
-    // 动态注册模块后必须使用 Vue.set 来更新属性, 否则不会重新收集依赖
-    Vue.set(parent, path[path.length - 1], rootModule.state)
+    store._withCommitting(() => {
+      // 动态注册模块后必须使用 Vue.set 来更新属性, 否则不会重新收集依赖
+      Vue.set(parent, path[path.length - 1], rootModule.state)
+    })
   }
 
   const namespaced = store._modules.getNamespace(path)
@@ -27,7 +29,9 @@ function installModule(store, rootState, path, rootModule) {
       // QAA 为什么 replaceState 后页面不刷新
       // rootModule.state 指向的为替换前的对象, 而到渲染阶段依赖收集的是新对象
       // val(rootModule.state, payload)
-      val(getState(store, path), payload)
+      store._withCommitting(() => {
+        val(getState(store, path), payload)
+      })
       store.subscribes.forEach(fn => fn({ type: key, payload }, store.state))
     })
   })
@@ -73,6 +77,12 @@ function resetStoreVM(store, state) {
     },
     computed,
   })
+  if (store.strict) {
+    store._vm.$watch(() => store._vm._data.$$state, () => {
+      console.assert(store.committing, 'outside mutation')
+      // 同步 watcher 立即执行
+    }, { sync: true, deep: true })
+  }
 
   // QA 为什么旧实例没有被自动销毁? 有谁还在指向旧实例吗
   if (oldVm) {
@@ -162,8 +172,9 @@ class Store {
     this._actions = Object.create(null)
     this._wrappedGetters = Object.create(null)
     this.plugins = options.plugins || []
+    this.strict = options.strict || false
     this.subscribes = []
-    
+    this.committing = false
     const state = this._modules.root.state
     // 把所有模块的属性放到根上, 进行合并
     installModule(this, state, [], this._modules.root)
@@ -197,7 +208,15 @@ class Store {
   }
 
   replaceState(state) {
-    this._vm._data.$$state = state
+    this._withCommitting(() => {
+      this._vm._data.$$state = state
+    })
+  }
+
+  _withCommitting(fn) {
+    this.committing = true
+    fn()
+    this.committing = false
   }
 }
 

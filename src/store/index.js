@@ -28,6 +28,7 @@ const persists = (store) => {
 }
 
 const store = new Vuex.Store({
+  strict: true,
   plugins: [
     logger(),
     persists,
