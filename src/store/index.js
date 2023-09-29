@@ -1,6 +1,6 @@
 import Vue from 'vue'
-import Vuex from 'vuex'
-// import Vuex from '@/vuex'
+// import Vuex from 'vuex'
+import Vuex from '@/vuex'
 
 Vue.use(Vuex)
 
@@ -52,7 +52,14 @@ export default new Vuex.Store({
         }
       },
       // 模块可以无限级嵌套
-      modules: {},
+      modules: {
+        a: {
+          state: { name: 'whh' },
+        }
+      },
+    },
+    to: {
+      
     }
   }
 })

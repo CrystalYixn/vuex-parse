@@ -1,46 +1,53 @@
 export let Vue
 
+class Module {
+  constructor(module) {
+    this._raw = module
+    this._children = {}
+    this.state = module.state
+  }
+
+  appendChild(key, module) {
+    this._children[key] = module
+  }
+
+  getChild(key) {
+    return this._children[key]
+  }
+}
+
+class ModuleCollection {
+  constructor(options) {
+    this.root = null
+    this.register([], options)
+  }
+
+  register(path, rootModule) {
+    let newModule = new Module(rootModule)
+    if (this.root === null) {
+      this.root = newModule
+    } else {
+      // 通过 key 从根上一直找到当前前一个 store, 因为深度遍历故前一个一定为父
+      const parent = path.slice(0, -1).reduce((start, current) => {
+        return start.getChild(current)
+      }, this.root)
+      const lastModuleName = path[path.length - 1]
+      parent.appendChild(lastModuleName, newModule)
+    }
+    const { modules } = rootModule
+    // 如果有孩子, 则深度注册所有孩子, key 信息全部在 path 中
+    if (modules) {
+      Object.keys(modules).forEach(k => {
+        this.register(path.concat(k), modules[k])
+      })
+    }
+  }
+}
+
 class Store {
   constructor(options) {
-    const {
-      state,
-      getters,
-      mutations,
-      actions,
-    } = options
-    this.mutations = mutations
-    this.actions = actions
-    this.getters = {}
-    const computed = {}
-
-    Object.keys(getters).forEach(k => {
-      // 先做一层劫持代理进行闭包缓存入参, 再让 vue 进行计算缓存
-      computed[k] = () => {
-        return getters[k](this.state)
-      }
-      Object.defineProperty(this.getters, k, {
-        get: () => {
-          return this._vm[k]
-        }
-      })
-    })
-
-    this._vm = new Vue({
-      data: {
-        $$state: state
-      },
-      computed,
-    })
-
-  }
-  get state() {
-    return this._vm._data.$$state
-  }
-  commit = (type, payload) => {
-    this.mutations[type](this.state, payload)
-  }
-  dispatch(type, payload) {
-    this.actions[type](this, payload)
+    this._modules = new ModuleCollection(options)
+    console.log(this._modules)
   }
 }
 
