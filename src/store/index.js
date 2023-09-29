@@ -1,7 +1,7 @@
 import Vue from 'vue'
-import Vuex from 'vuex'
+// import Vuex from 'vuex'
 // import logger from 'vuex/dist/logger'
-// import Vuex from '@/vuex'
+import Vuex from '@/vuex'
 
 Vue.use(Vuex)
 
@@ -91,21 +91,21 @@ const store = new Vuex.Store({
   }
 })
 
-store.registerModule(['school', 'dynamic'], {
-  namespaced: true,
-  state: {
-    age: 999900,
-  },
-  mutations: {
-    add(state) {
-      return state.age += 10
-    }
-  },
-  getters: {
-    plusAge(state) {
-      return state.age + 10000000
-    }
-  }
-})
+// store.registerModule(['school', 'dynamic'], {
+//   namespaced: true,
+//   state: {
+//     age: 999900,
+//   },
+//   mutations: {
+//     add(state) {
+//       return state.age += 10
+//     }
+//   },
+//   getters: {
+//     plusAge(state) {
+//       return state.age + 10000000
+//     }
+//   }
+// })
 
 export default store

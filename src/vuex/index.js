@@ -4,6 +4,11 @@ function forEachObj(obj, cb) {
   Object.keys(obj).forEach(k => cb(k, obj[k]))
 }
 
+/** 获取最新 state */
+function getState(store, path) {
+  return path.reduce((start, current) => start[current], store.state)
+}
+
 /** 挂载属性到 store 对象上 */
 function installModule(store, rootState, path, rootModule) {
   if (path.length > 0) {
@@ -11,7 +16,7 @@ function installModule(store, rootState, path, rootModule) {
     const parent = path.slice(0, -1).reduce((start, current) => {
       return start[current]
     }, rootState)
-    // 必须使用 Vue.set 来更新属性, 否则不会重新收集依赖
+    // 动态注册模块后必须使用 Vue.set 来更新属性, 否则不会重新收集依赖
     Vue.set(parent, path[path.length - 1], rootModule.state)
   }
 
@@ -19,7 +24,11 @@ function installModule(store, rootState, path, rootModule) {
   rootModule.forEachMutations((key, val) => {
     store._mutations[namespaced + key] = store._mutations[namespaced + key] || []
     store._mutations[namespaced + key].push((payload) => {
-      val(rootModule.state, payload)
+      // QAA 为什么 replaceState 后页面不刷新
+      // rootModule.state 指向的为替换前的对象, 而到渲染阶段依赖收集的是新对象
+      // val(rootModule.state, payload)
+      val(getState(store, path), payload)
+      store.subscribes.forEach(fn => fn({ type: key, payload }, store.state))
     })
   })
   rootModule.forEachActions((key, val) => {
@@ -30,7 +39,11 @@ function installModule(store, rootState, path, rootModule) {
   })
   rootModule.forEachGetters((key, val) => {
     store._wrappedGetters[namespaced + key] = () => {
-      return val(rootModule.state)
+      // QAA replaceState 后页面显示的计算属性会刷新?
+      // rootModule.state 指向的为替换前的对象, mutation 更改的也是旧对象
+      // 修改与显示都指向的老对象, 所以会变化
+      // return val(rootModule.state)
+      return val(getState(store, path))
     }
   })
   rootModule.forEachModule((key, val) => {
@@ -148,11 +161,15 @@ class Store {
     this._mutations = Object.create(null)
     this._actions = Object.create(null)
     this._wrappedGetters = Object.create(null)
+    this.plugins = options.plugins || []
+    this.subscribes = []
     
     const state = this._modules.root.state
     // 把所有模块的属性放到根上, 进行合并
     installModule(this, state, [], this._modules.root)
     resetStoreVM(this, state)
+    this.plugins.forEach(p => p(this))
+
     console.table(this._modules)
   }
 
@@ -173,6 +190,14 @@ class Store {
     installModule(this, this.state, path, module.newModule)
     // 注册新的计算属性
     resetStoreVM(this, this.state)
+  }
+
+  subscribe(fn) {
+    this.subscribes.push(fn)
+  }
+
+  replaceState(state) {
+    this._vm._data.$$state = state
   }
 }
 

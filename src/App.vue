@@ -15,10 +15,10 @@
     学校增加后年龄{{ $store.getters['school/plusAge'] }}
     <button @click="$store.commit('school/add', 1)">学校mutation</button>
 
-    <br/><br/>
+    <!-- <br/><br/>
     动态模块{{ $store.state.school.dynamic.age }}
     动态模块增加后年龄{{ $store.getters['school/dynamic/plusAge'] }}
-    <button @click="$store.commit('school/dynamic/add', 1)">动态模块mutation</button>
+    <button @click="$store.commit('school/dynamic/add', 1)">动态模块mutation</button> -->
   </div>
 </template>
 
