@@ -13,20 +13,21 @@ function installModule(store, rootState, path, rootModule) {
     parent[path[path.length - 1]] = rootModule.state
   }
 
+  const namespaced = store._modules.getNamespace(path)
   rootModule.forEachMutations((key, val) => {
-    store._mutations[key] = store._mutations[key] || []
-    store._mutations[key].push((payload) => {
+    store._mutations[namespaced + key] = store._mutations[namespaced + key] || []
+    store._mutations[namespaced + key].push((payload) => {
       val(rootModule.state, payload)
     })
   })
   rootModule.forEachActions((key, val) => {
-    store._actions[key] = store._actions[key] || []
-    store._actions[key].push((payload) => {
+    store._actions[namespaced + key] = store._actions[namespaced + key] || []
+    store._actions[namespaced + key].push((payload) => {
       val(store, payload)
     })
   })
   rootModule.forEachGetters((key, val) => {
-    store._wrappedGetters[key] = () => {
+    store._wrappedGetters[namespaced + key] = () => {
       return val(rootModule.state)
     }
   })
@@ -62,6 +63,10 @@ class Module {
     this._raw = module
     this._children = {}
     this.state = module.state
+  }
+
+  get namespaced() {
+    return !!this._raw.namespaced
   }
 
   appendChild(key, module) {
@@ -114,6 +119,14 @@ class ModuleCollection {
         this.register(path.concat(k), v)
       })
     }
+  }
+
+  getNamespace(path) {
+    let module = this.root
+    return path.reduce((str, key) => {
+      module = module.getChild(key)
+      return str + (module.namespaced ? `${key}/` : '')
+    }, '')
   }
 }
 

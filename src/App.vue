@@ -13,6 +13,7 @@
     <br/><br/>
     学校年龄{{ $store.state.school.age }}
     学校增加后年龄{{ $store.getters['school/plusAge'] }}
+    <button @click="$store.commit('school/add', 1)">学校mutation</button>
   </div>
 </template>
 
