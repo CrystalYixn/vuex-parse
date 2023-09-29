@@ -6,7 +6,11 @@ function forEachObj(obj, cb) {
 
 function installModule(store, rootState, path, rootModule) {
   if (path.length > 0) {
-
+    // 安装模块到根 state 上
+    const parent = path.slice(0, -1).reduce((start, current) => {
+      return start[current]
+    }, rootState)
+    parent[path[path.length - 1]] = rootModule.state
   }
 
   rootModule.forEachMutations((key, val) => {
@@ -28,6 +32,28 @@ function installModule(store, rootState, path, rootModule) {
   })
   rootModule.forEachModule((key, val) => {
     installModule(store, rootState, path.concat([key]), val)
+  })
+}
+
+function resetStoreVM(store, state) {
+  store.getters = {}
+  const computed = {}
+  const wrappedGetters = store._wrappedGetters
+
+  forEachObj(wrappedGetters, (k, v) => {
+    computed[k] = v
+    Object.defineProperty(store.getters, k, {
+      get: () => {
+        return store._vm[k]
+      }
+    })
+  })
+
+  store._vm = new Vue({
+    data: {
+      $$state: state
+    },
+    computed,
   })
 }
 
@@ -99,10 +125,23 @@ class Store {
     this._actions = Object.create(null)
     this._wrappedGetters = Object.create(null)
     
-    const state = this._modules.root.sate
+    const state = this._modules.root.state
     // 把所有模块的属性放到根上, 进行合并
     installModule(this, state, [], this._modules.root)
-    console.log(this._modules)
+    resetStoreVM(this, state)
+    console.table(this._modules)
+  }
+
+  get state() {
+    return this._vm._data.$$state
+  }
+
+  commit = (type, payload) => {
+    this._mutations[type].forEach(fn => fn.call(this, payload))
+  }
+
+  dispatch = (type, payload) => {
+    this._actions[type].forEach(fn => fn.call(this, payload))
   }
 }
 
