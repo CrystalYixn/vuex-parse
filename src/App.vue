@@ -7,7 +7,7 @@
     增加后年龄{{ $store.getters.plusAge }}
     增加后年龄{{ $store.getters.plusAge }}
     <button @click="$store.commit('add', 1)">mutation</button>
-    <button @click="$store.dispatch('add', 1)">action</button>
+    <button @click="actionMethod">action</button>
     <button @click="$store.state.age++">强制修改</button>
 
     <br/><br/>
@@ -32,6 +32,13 @@ export default {
   },
   mounted() {
     console.log(` ================== this.$store ================= `, this.$store)
+  },
+  methods: {
+    actionMethod() {
+      this.$store.dispatch('add', 1).then(() => {
+        console.log(` ================== 完成 ================= `, )
+      })
+    }
   }
 }
 </script>

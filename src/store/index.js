@@ -52,9 +52,12 @@ const store = new Vuex.Store({
   },
   actions: {
     add({ commit }, payload) {
-      setTimeout(() => {
-        commit('add', payload)
-      }, 1000)
+      return new Promise((res) => {
+        setTimeout(() => {
+          commit('add', payload)
+          res()
+        }, 1000)
+      })
     }
   },
   modules: {

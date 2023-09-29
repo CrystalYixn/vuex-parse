@@ -34,7 +34,7 @@ function installModule(store, rootState, path, rootModule) {
   rootModule.forEachActions((key, val) => {
     store._actions[namespaced + key] = store._actions[namespaced + key] || []
     store._actions[namespaced + key].push((payload) => {
-      val(store, payload)
+      return val(store, payload)
     })
   })
   rootModule.forEachGetters((key, val) => {
@@ -182,7 +182,7 @@ class Store {
   }
 
   dispatch = (type, payload) => {
-    this._actions[type].forEach(fn => fn.call(this, payload))
+    return Promise.all(this._actions[type].map(fn => fn.call(this, payload)))
   }
 
   registerModule(path, module) {
